@@ -1,0 +1,9 @@
+TempSensors:
+    - Id: 1
+      Name: FHEM Presence
+      Interval: 4
+      Enabled: True
+      PowerShellFilePath: "fhem_presence.ps1"
+    - Interval: 2
+      Enabled: False
+      PowerShellFilePath: "bla.ps1"
