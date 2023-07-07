@@ -7,3 +7,12 @@ TempSensors:
     - Interval: 2
       Enabled: False
       PowerShellFilePath: "bla.ps1"
+FanSensors:
+    - Id: 2
+      Name: FHEM Fan
+      Interval: 4
+      Enabled: True
+      PowerShellFilePath: "fhem_presence.ps1"
+    - Interval: 2
+      Enabled: False
+      PowerShellFilePath: "bla.ps1"

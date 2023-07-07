@@ -6,6 +6,10 @@ using System.CodeDom;
 using System.Drawing.Text;
 using System.Diagnostics;
 using static FanControl.PowerShell.Configuration;
+using System.Security.Cryptography.X509Certificates;
+using System.Diagnostics.CodeAnalysis;
+using YamlDotNet.Core;
+using System.ComponentModel;
 
 namespace FanControl.PowerShell
 {
@@ -15,7 +19,9 @@ namespace FanControl.PowerShell
 
         private Configuration _cfg;
         const string _cfgFilename = @"FanControl.PowerShell.yml";
-        private List<ShellTempSensor> _tempSensor = new List<ShellTempSensor>();
+        private List<ShellSensor> _tempSensors = new List<ShellSensor>();
+        private List<ShellSensor> _fanSensors = new List<ShellSensor>();
+
         public void Close()
         {
         }
@@ -27,24 +33,27 @@ namespace FanControl.PowerShell
             _cfg = deserializer.Deserialize<Configuration>(text);
         }
 
+
         public void Load(IPluginSensorsContainer _container)
         {
-            foreach(var tempSensor in _cfg.TempSensors)
+            foreach (var sensorCfg in _cfg.TempSensors.Where(x => x.Enabled))
             {
-                if (!tempSensor.Enabled)
-                {
-                    continue;
-                }
-
-                var sensor = new ShellTempSensor(tempSensor.Id, tempSensor.Name, tempSensor.Interval);
-                _tempSensor.Add(sensor);
+                var sensor = new ShellSensor(sensorCfg);
+                _tempSensors.Add(sensor);
                 _container.TempSensors.Add(sensor);
+            }
+
+            foreach (var sensorCfg in _cfg.FanSensors.Where(x => x.Enabled))
+            {
+                var sensor = new ShellSensor(sensorCfg);
+                _fanSensors.Add(sensor);
+                _container.FanSensors.Add(sensor);
             }
         }
 
         public void Update()
         {
-            foreach(var sensor in _tempSensor)
+            foreach(var sensor in _tempSensors.Concat(_fanSensors))
             {
                 sensor.Update();
             }            
