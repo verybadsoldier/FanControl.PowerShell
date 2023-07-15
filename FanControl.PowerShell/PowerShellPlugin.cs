@@ -1,15 +1,14 @@
 ﻿using FanControl.Plugins;
 using System.Numerics;
-using YamlDotNet.Serialization.NamingConventions;
-using YamlDotNet.Serialization;
 using System.CodeDom;
 using System.Drawing.Text;
 using System.Diagnostics;
 using static FanControl.PowerShell.Configuration;
 using System.Security.Cryptography.X509Certificates;
 using System.Diagnostics.CodeAnalysis;
-using YamlDotNet.Core;
 using System.ComponentModel;
+using YamlDotNet.Serialization;
+using System.Linq;
 
 namespace FanControl.PowerShell
 {
@@ -31,6 +30,15 @@ namespace FanControl.PowerShell
             string text = File.ReadAllText(_cfgFilename);
             var deserializer = new DeserializerBuilder().Build();
             _cfg = deserializer.Deserialize<Configuration>(text);
+
+            foreach (var sensorCfg in _cfg.ControlSensors.Concat(_cfg.FanSensors).Concat(_cfg.TempSensors))
+            {
+                if (sensorCfg.Interval < 0)
+                    throw new Exception($"Interval of sensor {sensorCfg.Name} cannot be less than 0. Current value: {sensorCfg.Interval}");
+
+                if (!File.Exists(sensorCfg.PowerShellFilePath)) 
+                    throw new Exception($"PowerShell script for sensor {sensorCfg.Name} cannot be found at path '{sensorCfg.PowerShellFilePath}'");
+            }
         }
 
 

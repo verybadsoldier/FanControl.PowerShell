@@ -47,39 +47,42 @@ namespace FanControl.PowerShell
         public void Update()
         {
             var now = DateTimeOffset.Now.ToUnixTimeSeconds();
-            if ( _lastUpdate + _intervalS <= now)
+            if (_lastUpdate + _intervalS > now)
+                return;
+
+            using var ps = System.Management.Automation.PowerShell.Create();
+            ps.AddScript(_script);
+            ps.AddParameter("Command", "Update");
+            ps.AddParameter("SensorName", Name);
+
+            float? newValue = null;
+            Collection<PSObject> objects = ps.Invoke();
+            foreach (var obj in objects)
             {
-                using var ps = System.Management.Automation.PowerShell.Create();
-                ps.AddScript(_script);
-                ps.AddParameter("Mode", "Update");
-                
-                float? newValue = null;
-                Collection<PSObject> objects = ps.Invoke();
-                foreach (var obj in objects)
-                {
-                    if (obj == null)
-                        continue;
+                if (obj == null)
+                    continue;
 
-                    if (obj.Properties.Any(x => x.Name == "Tag" && String.Equals(x.Value, "FanControl.PowerShell")))
+                if (obj.Properties.Any(x => x.Name == "Tag" && String.Equals(x.Value, "FanControl.PowerShell")))
+                {
+                    var prop = obj.Properties["SensorValue"];
+                    if (prop != null)
                     {
-                        var prop = obj.Properties["SensorValue"];
-                        if (prop != null)
-                        {
-                            newValue = float.Parse((string)prop.Value, CultureInfo.InvariantCulture.NumberFormat);
-                        }
-                        break;
+                        newValue = Convert.ToSingle(prop.Value);
                     }
-                }
-
-                if (newValue != null)
-                {
-                    Value = newValue;
-                }
-                else
-                {
-                    throw new Exception("Could not read result PsObject from PowerShell script");
+                    break;
                 }
             }
+
+            if (newValue != null)
+            {
+                Value = newValue;
+            }
+            else
+            {
+                throw new Exception("Could not read result PsObject from PowerShell script");
+            }
+
+            _lastUpdate = now;
         }
     }
 }

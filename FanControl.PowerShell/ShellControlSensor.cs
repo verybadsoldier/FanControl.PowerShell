@@ -17,15 +17,17 @@ namespace FanControl.PowerShell
         {
             using var ps = System.Management.Automation.PowerShell.Create();
             ps.AddScript(_script);
-            ps.AddParameter("Mode", "Set");
+            ps.AddParameter("Command", "Set");
             ps.AddParameter("Value", val);
+            ps.AddParameter("SensorName", Name);
         }
 
         public void Reset()
         {
             using var ps = System.Management.Automation.PowerShell.Create();
             ps.AddScript(_script);
-            ps.AddParameter("Mode", "Update");
+            ps.AddParameter("Command", "Reset");
+            ps.AddParameter("SensorName", Name);
         }
     }
 }
