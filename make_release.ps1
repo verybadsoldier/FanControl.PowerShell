@@ -6,7 +6,7 @@ dotnet publish $project -c release -o $output
  
 #"$env:userprofile\.nuget\packages\ilmerge\3.0.29\tools\net452\ILMerge.exe"
 
-
+$releaseFilename = "FanControll.PowerShell.zip"
 
 # Path to ILMerge executable
 $ilmMergePath = "C:\Path\To\ILMerge.exe"
@@ -48,6 +48,11 @@ $packagePath = "package"
 if (Test-Path $packagePath) {
     Remove-Item -path $packagePath -recurse
 }
+
+if (Test-Path $releaseFilename) {
+    Remove-Item -path $releaseFilename
+}
+
 New-Item -ItemType Directory -Path $packagePath
 
 $zipInputFiles = New-Object System.Collections.ArrayList
@@ -58,4 +63,4 @@ foreach ($dll in $dllList) {
 
     Copy-Item -Path "releases\\$dll" -Destination $packagePath
 }
-Compress-Archive $zipInputFiles FanControll.PowerShell.zip
+Compress-Archive $zipInputFiles $releaseFilename
