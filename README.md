@@ -1,30 +1,58 @@
 # FanControl.PowerShell
 
+![Logo](https://github.com/PowerShell/PowerShell/blob/master/assets/Powershell_256.png?raw=true)
 ## Introduction
 
-This is a plugin for FanControl that can run custom PowerShell scripts to retrieve data and to send control commands. The plugin is customizable to define
+This is a plugin for FanControl that can run custom PowerShell scripts to retrieve data and to send control commands. The plugin is customizable by defining PowerShell script files that are executed everytime a sensor has is to be retrieved or a control action is executed.
 
 My use case for developing this was to connect FanControl to my home automation system. I wanted the fans to spin at full speed when nobody is at home. So I can have a virtual temperature sensor with this plugin that reports a high temperature when nobody is at home so the fans will spin up.
 
 ## Requirements
 
-FanControl .NET 7.0
+FanControl .NET 7.0. _Does not work with .NET Framework version_
+
+## Quick Start
+
+No time to read the whole documentation? Just do this:
+
+1. Download the release ZIP file and extract it to your `Plugins` directory
+2. Create the configuration file `FanControl.PowerShell.yml` in your FanControl folder and put for example this content to create one temperature sensor:
+```yaml
+TempSensors:
+    - Id: 1
+      Name: My PowerShell Temp Sensor
+      Interval: 1
+      Enabled: True
+      PowerShellFilePath: "my_temp_sensor.ps1"
+```
+3. Create the PowerShell script file `my_temp_sensor.ps1` mentioned in the configuration file with the following example content:
+```powershell
+Param(
+    [string]$Command,
+    [string]$SensorName
+)
+
+$value = 12.2
+
+[PSCustomObject]@{
+    Tag         = "FanControl.PowerShell"
+    SensorValue = $value
+}
+```
+
+4. (Re)Start FanControl. Now should you see a new temperature sensor named `My PowerShell Temp Sensor` in any temperature sensor list
 
 
 ## Configuration
 
 The plugin has to be configured by a YAML configuration file. The file has to be named `FanControl.PowerShell.yml` and placed into the FanControl application folder.
 
-There are three different sensor types that can be created by this plugin:
+There are three different sensor types that can be configured:
 * Temperature Sensor
 * Fan Sensor
 * Control Sensor
 
-All three types are supporting the mode `Update` and are expected to deliver a value on every call in this mode.
-
-The `Control Sensor` is special as it is able to control something. But it also supports the modes `Reset` and `Set`.
-
-In the configuration file on the top level there is a list element for every sensor type named accordingly `TempSensors`, `FanSensors` and `ControlSensors`.
+In the configuration file on the top level in the YAML structure, there is a list element for every sensor type named accordingly `TempSensors`, `FanSensors` and `ControlSensors`.
 
 ### Parameters
 All three types have the same configuration parameters:
@@ -45,36 +73,66 @@ All three types have the same configuration parameters:
 ```yaml
 TempSensors:
     - Id: 1
-      Name: FHEM Presence
+      Name: My Temp
       Interval: 60
       Enabled: True
-      PowerShellFilePath: "FanControl.PowerShell_presence.ps1"
+      PowerShellFilePath: "FanControl.PowerShell_temp.ps1"
 
 FanSensors:
     - Id: 2
-      Name: FHEM Fan
+      Name: My Fan
       Interval: 4
       Enabled: False
-      PowerShellFilePath: "fhem_presence.ps1"
+      PowerShellFilePath: "fan.ps1"
 
 ```
 
 ## The PowerShell Scripts
 
-The PowerShell scripts being used have to meet certain criterias to be compatible with this plugin. Scripts used for `TempSensor` and `FanSensor` to retrieve the sensor value (tempreature or fan speed) in some way and return it to the plugin. This is done by writing an object of type `PSCustomObject` to the sucess stream. To be able for the plugin to identify this result object, it has to has a property named `Tag` with the value `FanControl.PowerShell`. The sensor value has to be put into a property called `SensorValue` as type `[double]`, `[decimal]`or `[float]`.
+The PowerShell scripts being used have to meet certain criterias to be compatible with this plugin. With the `Update` comand (see below), scripts used for `TempSensor` and `FanSensor` have to retrieve the sensor value (tempreature or fan speed) in some way and return it to the plugin. This is done by writing an object of type `PSCustomObject` to the success stream in the PowerShell script. To be able for the plugin to identify this result object, it has to has a property named `Tag` with the value `FanControl.PowerShell`. The sensor value has to be put into a property called `SensorValue` as type `[double]`, `[decimal]`or `[float]`.
 
-*Simple example:*
+### Input Paramters
+There are three different types of `Command` a plugin can be called with. `Update` is the most common one. It is supported by all plugin types and it's used to retrieve a sensor value as described above. The plugin type `ControlSensor` also supports the command `Set` and `Reset`.
+
+
+| Plugin Type     | Update | Set | Reset |
+| --------------- |:------:|:---:|:-----:|
+| TempSensor      | x      |     |       |
+| FanSensor       | x      |     |       |
+| ControlSensor   | x      | x   |  x    |
+
+The `Command` is passed over to every script call as a parameter. Inside the script, it can be used to differentiate between the command types and act accordingly.
+
+Then there are also these additional parameters passed over to script calls. This is the complete list of parameters:
+| Parameter Name  | Command   | Type   | Description                                                                                      |
+| --------------- |:---------:|:------:|--------------------------------------------------------------------------------------------------|
+| Command         | Always    | string | Contains the command type (`Update`, `Reset`, `Set`)                                             |
+| SensorName      | Always    | string | Name of the sensor as configured. Can be used to handle multiple sensors in the same script      |
+| Value           | Set       | float  | Value to set for a ControlSensor                                                                 |
+
+
+Simple example for a `TempSensor` or `FanSensor`script that returns a hardcoded value:
 ```powershell
+Param(
+    [string]$Command,
+    [string]$SensorName
+)
+
+$value = 12.2
+
 [PSCustomObject]@{
     Tag         = "FanControl.PowerShell"
-    SensorValue = 23.3
+    SensorValue = $value
 }
 ```
 
 More complex example that queries a value via HTTP and returns it to the plugin:
 ```powershell
-Example:
-```powershell
+Param(
+    [string]$Command,
+    [string]$SensorName
+)
+
 $Response = Invoke-WebRequest -URI "https://mydata.website.com/TemperatureEndpoint" | ConvertFrom-Json
 
 [PSCustomObject]@{
@@ -83,14 +141,37 @@ $Response = Invoke-WebRequest -URI "https://mydata.website.com/TemperatureEndpoi
 }
 ```
 
-They have to have one mandatory input paramter of type `string` called `Mode`. When the plugin starts the script, then this parameter will be passed over. The value will usually by `Update` for regular sensor updates:
+In this mode, the PowerShell script is expected to retrieve the sensor value (temperature or fan speed) and return it to the plugin. 
+
+A `ConstrolSensor` script would need to also have the `Value` parameter for the `Set` command:
 
 ```powershell
 Param(
-    [Parameter(Mandatory = $True)]
-    [string]$Mode
+    [string]$Command,
+    [string]$SensorName
+    [string]$Value
 )
+
+# Do things here
 ```
 
-In this mode, the PowerShell script is expected to retrieve the sensor value (temperature or fan speed) and return it to the plugin. 
+## FAQ
 
+### It does not work! What can I do?
+
+Take a look at the file `log.txt` in the FanControl application folder. It might give you an idea what the problem is. Feel free to file an issue on Github describing what the problem is, what you did and how your configuration looks.
+
+### It still does not work!
+
+Try to run your PowerShell script manually in a console and see if it works there.
+
+### It does not even work on the console!
+
+Did you allow Windows already to run unsigned PowerShell scripts? You can do for example
+```
+Start Windows PowerShell with the "Run as Administrator" option. Only members of the Administrators group on the computer can change the execution policy.
+
+Enable running unsigned scripts by entering:
+
+set-executionpolicy remotesigned
+```
