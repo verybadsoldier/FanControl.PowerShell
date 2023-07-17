@@ -5,7 +5,7 @@
 
 This is a plugin for FanControl that can run custom PowerShell scripts to retrieve data and to send control commands. The plugin is customizable by defining PowerShell script files that are executed everytime a sensor has is to be retrieved or a control action is executed.
 
-My use case for developing this was to connect FanControl to my home automation system. I wanted the fans to spin at full speed when nobody is at home. So I can have a virtual temperature sensor with this plugin that reports a high temperature when nobody is at home so the fans will spin up.
+My use case for developing this was to connect FanControl to my home automation system. I wanted the fans to spin at full speed when nobody is at home. So I can have a virtual temperature sensor with this plugin that reports a high temperature when nobody is at home so the fans will spin up. Is there a use case for anybody else? Well, I don't know actually.
 
 ## Requirements
 
@@ -13,7 +13,7 @@ FanControl .NET 7.0. _Does not work with .NET Framework version_
 
 ## Quick Start
 
-No time to read the whole documentation? Just do this:
+As a quick start without having to read the whole documentation, Just do this:
 
 1. Download the release ZIP file and extract it to your `Plugins` directory
 2. Create the configuration file `FanControl.PowerShell.yml` in your FanControl folder and put for example this content to create one temperature sensor:
@@ -111,7 +111,7 @@ Then there are also these additional parameters passed over to script calls. Thi
 | Value           | Set       | float  | Value to set for a ControlSensor                                                                 |
 
 
-Simple example for a `TempSensor` or `FanSensor`script that returns a hardcoded value:
+Simple example for a `TempSensor` or `FanSensor` script that returns a hardcoded value:
 ```powershell
 Param(
     [string]$Command,
@@ -159,19 +159,13 @@ Param(
 
 ### It does not work! What can I do?
 
-Take a look at the file `log.txt` in the FanControl application folder. It might give you an idea what the problem is. Feel free to file an issue on Github describing what the problem is, what you did and how your configuration looks.
-
-### It still does not work!
-
 Try to run your PowerShell script manually in a console and see if it works there.
 
-### It does not even work on the console!
 
-Did you allow Windows already to run unsigned PowerShell scripts? You can do for example
-```
-Start Windows PowerShell with the "Run as Administrator" option. Only members of the Administrators group on the computer can change the execution policy.
+### It works when running manually, but not in FanControl!
 
-Enable running unsigned scripts by entering:
+Take a look at the file `log.txt` in the FanControl application folder. It might give you an idea what the problem is. Feel free to file an issue on Github describing what the problem is, what you did and how your configuration looks.
 
-set-executionpolicy remotesigned
-```
+### When using this plugin, FanControl gets super sluggish!
+
+Depending on how heavy your PowerShell script is, it might slow down FanControl when called to frequently. Maybe run it less often by increasing the `Interval` parameter.
