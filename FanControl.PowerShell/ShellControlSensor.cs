@@ -16,10 +16,20 @@ namespace FanControl.PowerShell
         public void Set(float val)
         {
             using var ps = System.Management.Automation.PowerShell.Create();
+
             ps.AddScript(_script);
             ps.AddParameter("Command", "Set");
             ps.AddParameter("Value", val);
             ps.AddParameter("SensorName", Name);
+
+            try
+            {
+                ps.Invoke();
+            }
+            catch (Exception ex)
+            {
+                // Error in execution
+            }
         }
 
         public void Reset()
@@ -28,6 +38,15 @@ namespace FanControl.PowerShell
             ps.AddScript(_script);
             ps.AddParameter("Command", "Reset");
             ps.AddParameter("SensorName", Name);
+
+            try
+            {
+                ps.Invoke();
+            }
+            catch (Exception ex)
+            {
+                // Error in execution
+            }
         }
     }
 }
