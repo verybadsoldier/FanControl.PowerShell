@@ -56,31 +56,36 @@ namespace FanControl.PowerShell
             ps.AddParameter("SensorName", Name);
 
             float? newValue = null;
-            Collection<PSObject> objects = ps.Invoke();
-            foreach (var obj in objects)
+            try
             {
-                if (obj == null)
-                    continue;
-
-                if (obj.Properties.Any(x => x.Name == "Tag" && String.Equals(x.Value, "FanControl.PowerShell")))
+                Collection<PSObject> objects = ps.Invoke();
+                foreach (var obj in objects)
                 {
-                    var prop = obj.Properties["SensorValue"];
-                    if (prop != null)
+                    if (obj == null)
+                        continue;
+
+                    if (obj.Properties.Any(x => x.Name == "Tag" && String.Equals(x.Value, "FanControl.PowerShell")))
                     {
-                        newValue = Convert.ToSingle(prop.Value);
+                        var prop = obj.Properties["SensorValue"];
+                        if (prop != null)
+                        {
+                            newValue = Convert.ToSingle(prop.Value);
+                        }
+                        break;
                     }
-                    break;
                 }
             }
+            catch (Exception ex)
+            {
+                // Exception while executing script
+            }
 
-            if (newValue != null)
+            if (newValue == null)
             {
-                Value = newValue;
+                // Error reading value
             }
-            else
-            {
-                throw new Exception("Could not read result PsObject from PowerShell script");
-            }
+
+            Value = newValue;
 
             _lastUpdate = now;
         }
