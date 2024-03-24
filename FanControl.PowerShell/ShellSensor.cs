@@ -1,4 +1,5 @@
-﻿using Namotion.Reflection;
+﻿using FanControl.Plugins;
+using Namotion.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,21 +13,24 @@ namespace FanControl.PowerShell
 {
     internal class ShellSensor : Plugins.IPluginSensor
     {
-        public ShellSensor(Configuration.Sensor sensorCfg) : this(sensorCfg.Id, sensorCfg.Name, sensorCfg.Interval, sensorCfg.PowerShellFilePath) { }
+        public ShellSensor(Configuration.Sensor sensorCfg, IPluginLogger logger) : this(sensorCfg.Id, sensorCfg.Name, sensorCfg.Interval, sensorCfg.PowerShellFilePath, logger) { }
 
-        public ShellSensor(string id, string name, long intervalS, string powerShellFilePath)
+        public ShellSensor(string id, string name, long intervalS, string powerShellFilePath, IPluginLogger logger)
         {
             _id = id;
             _name = name;
             _intervalS = intervalS;
 
             _script = File.ReadAllText(powerShellFilePath);
+
+            _logger = logger;
         }
 
         private readonly string _id;
         private readonly string _name;
         private readonly long _intervalS;
         protected readonly string _script;
+        protected readonly IPluginLogger _logger;
 
         private float? x = 1.0f;
         private long _lastUpdate = 0;
@@ -74,15 +78,15 @@ namespace FanControl.PowerShell
                         break;
                     }
                 }
+
+                if (newValue == null)
+                {
+                    _logger.Log("PowerShellPlugin: Update - Could not find sensor value in script response");
+                }
             }
             catch (Exception ex)
             {
-                // Exception while executing script
-            }
-
-            if (newValue == null)
-            {
-                // Error reading value
+                _logger.Log($"PowerShellPlugin: Update - Error running PowerShell script: {_script}: {ex.Message}");
             }
 
             Value = newValue;

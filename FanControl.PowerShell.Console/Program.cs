@@ -2,7 +2,8 @@
 using FanControl.PowerShell;
 
 var c = new Container();
-var plugin = new FanControl.PowerShell.PowerShellPlugin();
+var logger = new Logger();
+var plugin = new FanControl.PowerShell.PowerShellPlugin(logger);
 plugin.Initialize();
 plugin.Load(c);
 
@@ -14,6 +15,13 @@ while (true)
     Console.WriteLine(c.TempSensors.Select(x => x.Value.ToString()).ToList()[0]);
 }
 
+class Logger : IPluginLogger
+{
+    public void Log(string message)
+    {
+        Console.WriteLine($"{message}");
+    }
+}
 
 class Container : IPluginSensorsContainer
 {

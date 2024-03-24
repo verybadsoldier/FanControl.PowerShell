@@ -9,7 +9,7 @@ namespace FanControl.PowerShell
 {
     internal class ShellControlSensor : ShellSensor, IPluginControlSensor
     {
-        public ShellControlSensor(string id, string name, long intervalS, string powerShellFilePath) : base(id, name, intervalS, powerShellFilePath)
+        public ShellControlSensor(string id, string name, long intervalS, string powerShellFilePath, IPluginLogger logger) : base(id, name, intervalS, powerShellFilePath, logger)
         {
         }
 
@@ -28,7 +28,7 @@ namespace FanControl.PowerShell
             }
             catch (Exception ex)
             {
-                // Error in execution
+                _logger.Log($"PowerShellPlugin: Set - Error running PowerShell script: {_script}: {ex.Message}");
             }
         }
 
@@ -45,7 +45,7 @@ namespace FanControl.PowerShell
             }
             catch (Exception ex)
             {
-                // Error in execution
+                _logger.Log($"PowerShellPlugin: Reset - Error running PowerShell script: {_script}: {ex.Message}");
             }
         }
     }

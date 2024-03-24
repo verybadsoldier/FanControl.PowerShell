@@ -9,7 +9,7 @@ My use case for developing this was to connect FanControl to my home automation 
 
 ## Requirements
 
-FanControl .NET 7.0. _Does not work with .NET Framework version_
+FanControl .NET 8.0. _Does not work with .NET Framework version_
 
 ## Quick Start
 
